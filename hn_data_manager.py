@@ -3,11 +3,12 @@ import time
 import logging
 from typing import List, Dict, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from content_extractor import ContentExtractor
 
 class HackerNewsDataManager:
     """Manages data fetching from HackerNews API"""
     
-    def __init__(self):
+    def __init__(self, extract_url_content: bool = True):
         self.base_url = "https://hacker-news.firebaseio.com/v0"
         self.session = requests.Session()
         self.session.headers.update({
@@ -17,6 +18,10 @@ class HackerNewsDataManager:
         # Rate limiting
         self.requests_per_second = 10
         self.last_request_time = 0
+        
+        # Content extraction
+        self.extract_url_content = extract_url_content
+        self.content_extractor = ContentExtractor() if extract_url_content else None
         
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
@@ -94,7 +99,7 @@ class HackerNewsDataManager:
             comment_ids = story['kids'][:5]
             comments = self._fetch_comments(comment_ids)
         
-        return {
+        story_data = {
             'id': story['id'],
             'title': story['title'],
             'text': story.get('text', ''),
@@ -106,6 +111,15 @@ class HackerNewsDataManager:
             'comments': comments,
             'type': 'story'
         }
+        
+        # Extract content from URL if enabled and URL exists
+        if self.extract_url_content and self.content_extractor and story_data.get('url'):
+            try:
+                story_data = self.content_extractor.enhance_document_with_url_content(story_data)
+            except Exception as e:
+                self.logger.warning(f"Failed to extract URL content for story {story['id']}: {e}")
+        
+        return story_data
     
     def _fetch_comments(self, comment_ids: List[int]) -> List[Dict]:
         """Fetch comment details for given IDs"""

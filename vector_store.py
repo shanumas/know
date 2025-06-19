@@ -58,6 +58,15 @@ class VectorStore:
         if document.get('text'):
             text_parts.append(f"Content: {document['text']}")
         
+        # Add extracted content from URLs (web pages, YouTube transcripts, etc.)
+        if document.get('extracted_content'):
+            content_type = document.get('content_type', 'extracted')
+            text_parts.append(f"Extracted {content_type} content: {document['extracted_content']}")
+        
+        # Add extracted title if different from main title
+        if document.get('extracted_title') and document.get('extracted_title') != document.get('title'):
+            text_parts.append(f"Extracted title: {document['extracted_title']}")
+        
         # Add top comments
         if document.get('comments'):
             comment_texts = []

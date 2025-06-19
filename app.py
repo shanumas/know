@@ -32,8 +32,8 @@ if 'initialization_complete' not in st.session_state:
 def initialize_system():
     """Initialize the RAG system components"""
     try:
-        # Initialize data manager
-        st.session_state.data_manager = HackerNewsDataManager()
+        # Initialize data manager with URL content extraction
+        st.session_state.data_manager = HackerNewsDataManager(extract_url_content=True)
         
         # Initialize vector store
         st.session_state.vector_store = VectorStore()
@@ -120,8 +120,16 @@ def main():
         
         st.header("Knowledge Base Management")
         
+        # URL content extraction toggle
+        extract_urls = st.checkbox("Extract content from URLs & YouTube videos", value=True, 
+                                 help="When enabled, the system will extract text content from web pages and YouTube video transcripts")
+        
         if st.button("🔄 Update Knowledge Base"):
             with st.spinner("Updating knowledge base..."):
+                # Update data manager setting
+                if st.session_state.data_manager:
+                    st.session_state.data_manager.extract_url_content = extract_urls
+                
                 new_docs = update_knowledge_base()
                 if new_docs > 0:
                     st.success(f"Added {new_docs} new documents!")
@@ -184,6 +192,12 @@ def main():
                                     st.write(f"**Title:** {source.get('title', 'No title')}")
                                     if source.get('text'):
                                         st.write(f"**Content:** {truncate_text(source['text'], 200)}")
+                                    
+                                    # Show extracted content info
+                                    if source.get('extracted_content'):
+                                        content_type = source.get('content_type', 'extracted')
+                                        st.write(f"**Extracted {content_type} content:** {truncate_text(source['extracted_content'], 150)}")
+                                    
                                     st.write(f"**Score:** {source.get('score', 0)}")
                                     if source.get('time'):
                                         st.write(f"**Posted:** {format_timestamp(datetime.fromtimestamp(source['time']))}")
@@ -213,6 +227,12 @@ def main():
                             with col1:
                                 if result.get('text'):
                                     st.write(truncate_text(result['text'], 300))
+                                
+                                # Show extracted content info
+                                if result.get('extracted_content'):
+                                    content_type = result.get('content_type', 'extracted')
+                                    st.write(f"**Extracted {content_type} content:** {truncate_text(result['extracted_content'], 200)}")
+                                
                                 st.write(f"**Similarity Score:** {result.get('similarity_score', 0):.3f}")
                             
                             with col2:
