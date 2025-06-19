@@ -318,22 +318,28 @@ class ContentExtractor:
     def _extract_youtube_title(self, html_content: str) -> str:
         """Extract YouTube video title from HTML"""
         title_patterns = [
-            r'"title":"([^"]+)"',
-            r'<meta name="title" content="([^"]*)"',
+            r'"videoDetails":\s*{[^}]*"title":\s*"([^"]+)"',
             r'<meta property="og:title" content="([^"]*)"',
-            r'"videoDetails":{"videoId":"[^"]+","title":"([^"]+)"',
+            r'<meta name="title" content="([^"]*)"',
+            r'"title":\s*"([^"]+)"[^}]*"videoId"',
+            r'ytInitialPlayerResponse[^}]+title[^}]+text[^}]+([^"]+)',
             r'<title>([^<]+)</title>'
         ]
         
         for pattern in title_patterns:
-            match = re.search(pattern, html_content)
+            match = re.search(pattern, html_content, re.IGNORECASE)
             if match:
                 title = match.group(1)
                 # Clean title
                 title = title.replace('\\u0026', '&').replace('\\/', '/').replace('\\"', '"')
                 title = re.sub(r'\\u[0-9a-fA-F]{4}', '', title)  # Remove unicode escapes
                 title = title.strip()
-                if len(title) > 5:
+                
+                # Filter out generic YouTube titles
+                if (len(title) > 10 and 
+                    not title.endswith(' - YouTube') and
+                    title != 'YouTube' and
+                    'Enjoy the videos and music you love' not in title):
                     return title.replace(' - YouTube', '').strip()
         
         return ""
@@ -341,21 +347,26 @@ class ContentExtractor:
     def _extract_youtube_description(self, html_content: str) -> str:
         """Extract YouTube video description from HTML"""
         desc_patterns = [
-            r'"description":"([^"]+)"',
-            r'"shortDescription":"([^"]+)"',
+            r'"videoDetails":\s*{[^}]*"shortDescription":\s*"([^"]+)"',
+            r'<meta property="og:description" content="([^"]*)"',
             r'<meta name="description" content="([^"]*)"',
-            r'<meta property="og:description" content="([^"]*)"'
+            r'"shortDescription":\s*"([^"]+)"',
+            r'"description":\s*{[^}]*"simpleText":\s*"([^"]+)"'
         ]
         
         for pattern in desc_patterns:
-            match = re.search(pattern, html_content)
+            match = re.search(pattern, html_content, re.IGNORECASE)
             if match:
                 description = match.group(1)
                 # Clean description
                 description = description.replace('\\n', '\n').replace('\\u0026', '&').replace('\\/', '/')
                 description = re.sub(r'\\u[0-9a-fA-F]{4}', '', description)  # Remove unicode escapes
                 description = description.strip()
-                if len(description) > 20:
+                
+                # Filter out generic YouTube descriptions
+                if (len(description) > 30 and 
+                    'Enjoy the videos and music you love' not in description and
+                    'upload original content' not in description):
                     # Limit description length
                     if len(description) > 1000:
                         description = description[:1000] + "..."

@@ -106,9 +106,11 @@ Changelog:
 - June 19, 2025. Initial setup
 - June 19, 2025. Enhanced with URL content extraction:
   - Added trafilatura for web page text extraction
-  - Added yt-dlp for YouTube video transcript extraction
-  - Updated vector embeddings to include extracted content
+  - Added yt-dlp for YouTube video transcript extraction with HTML fallback
+  - Improved YouTube metadata extraction to get proper video titles and descriptions
+  - Updated vector embeddings to include extracted content from URLs
   - Added user controls for content extraction settings
+  - Fixed generic YouTube content extraction issue
 ```
 
 ## User Preferences
