@@ -23,11 +23,11 @@ The application follows a modular RAG architecture with clear separation of conc
 - **Rate Limiting**: 10 requests per second with exponential backoff
 
 ### 2. Vector Store (`vector_store.py`)
-- **Technology**: FAISS (Facebook AI Similarity Search) with sentence transformers
-- **Model**: all-MiniLM-L6-v2 for text embeddings
-- **Storage**: Persistent index files (faiss + pickle metadata)
-- **Search**: Cosine similarity with inner product optimization
-- **Text Processing**: Combines title, content, and top comments for embedding
+- **Technology**: Simple TF-IDF based similarity search
+- **Model**: Custom TF-IDF implementation for text embeddings
+- **Storage**: Persistent JSON + pickle metadata files
+- **Search**: Cosine similarity with sparse vectors
+- **Text Processing**: Combines title, content, extracted URL content, and top comments for embedding
 
 ### 3. RAG Agent (`rag_agent.py`)
 - **Model**: OpenAI GPT-4o (latest as of May 2024)
@@ -37,11 +37,17 @@ The application follows a modular RAG architecture with clear separation of conc
 
 ### 4. Web Interface (`app.py`)
 - **Framework**: Streamlit with session state management
-- **Features**: Real-time chat interface, document preview, system status
+- **Features**: Real-time chat interface, document preview, system status, URL extraction controls
 - **Initialization**: Lazy loading of components and data
-- **Updates**: Background data refresh capabilities
+- **Updates**: Background data refresh capabilities with optional content extraction
 
-### 5. Utilities (`utils.py`)
+### 5. Content Extractor (`content_extractor.py`)
+- **Web Pages**: Uses trafilatura for robust content extraction
+- **YouTube Videos**: Uses yt-dlp for transcript extraction
+- **Fallback**: Simple HTML parsing when dependencies unavailable
+- **Integration**: Automatically enhances HackerNews documents with extracted content
+
+### 6. Utilities (`utils.py`)
 - **Timestamp Formatting**: Human-readable time differences
 - **Text Processing**: Truncation and HTML cleaning
 - **Display Helpers**: Content formatting for UI
@@ -49,10 +55,11 @@ The application follows a modular RAG architecture with clear separation of conc
 ## Data Flow
 
 1. **Data Ingestion**: HackerNews API → Rate-limited fetching → Document processing
-2. **Vectorization**: Text preparation → Sentence transformer → FAISS index
-3. **Query Processing**: User query → Vector search → Top-k retrieval
-4. **Response Generation**: Retrieved context → OpenAI API → Generated response
-5. **UI Rendering**: Response + sources → Streamlit interface
+2. **Content Enhancement**: URL extraction → Web/YouTube content → Enhanced documents
+3. **Vectorization**: Text preparation → TF-IDF encoding → In-memory index
+4. **Query Processing**: User query → Vector search → Top-k retrieval
+5. **Response Generation**: Retrieved context → OpenAI API → Generated response
+6. **UI Rendering**: Response + sources → Streamlit interface
 
 ## External Dependencies
 
@@ -62,11 +69,11 @@ The application follows a modular RAG architecture with clear separation of conc
 
 ### Key Libraries
 - **Streamlit**: Web framework and UI
-- **FAISS**: Vector similarity search
-- **SentenceTransformers**: Text embedding generation
+- **TF-IDF**: Simple vector similarity search (fallback implementation)
 - **OpenAI**: LLM API client
 - **Requests**: HTTP client with session management
-- **NumPy**: Numerical operations for vectors
+- **Trafilatura**: Web content extraction
+- **yt-dlp**: YouTube video transcript extraction
 
 ### ML Models
 - **all-MiniLM-L6-v2**: Lightweight sentence transformer (384 dimensions)
@@ -97,6 +104,11 @@ The application follows a modular RAG architecture with clear separation of conc
 ```
 Changelog:
 - June 19, 2025. Initial setup
+- June 19, 2025. Enhanced with URL content extraction:
+  - Added trafilatura for web page text extraction
+  - Added yt-dlp for YouTube video transcript extraction
+  - Updated vector embeddings to include extracted content
+  - Added user controls for content extraction settings
 ```
 
 ## User Preferences
