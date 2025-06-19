@@ -116,8 +116,11 @@ class HackerNewsDataManager:
         if self.extract_url_content and self.content_extractor and story_data.get('url'):
             try:
                 story_data = self.content_extractor.enhance_document_with_url_content(story_data)
+                if story_data.get('extracted_content'):
+                    self.logger.info(f"Successfully extracted {story_data.get('content_type', 'content')} content for story {story['id']}")
             except Exception as e:
                 self.logger.warning(f"Failed to extract URL content for story {story['id']}: {e}")
+                story_data['extraction_error'] = str(e)
         
         return story_data
     

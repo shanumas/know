@@ -90,7 +90,7 @@ def main():
         layout="wide"
     )
     
-    st.title("🔍 HackerNews RAG Search")
+    st.title("HackerNews RAG Search")
     st.markdown("Semantic search and AI-powered responses over HackerNews content")
     
     # Initialize system if not done
@@ -109,22 +109,25 @@ def main():
         st.header("System Status")
         
         if st.session_state.last_update:
-            st.success("✅ System Ready")
+            st.success("System Ready")
             st.write(f"Last updated: {format_timestamp(st.session_state.last_update)}")
             
             if st.session_state.vector_store:
                 doc_count = st.session_state.vector_store.get_document_count()
                 st.metric("Documents in KB", doc_count)
         else:
-            st.warning("⚠️ System Not Ready")
+            st.warning("System Not Ready")
         
         st.header("Knowledge Base Management")
         
         # URL content extraction toggle
         extract_urls = st.checkbox("Extract content from URLs & YouTube videos", value=True, 
-                                 help="When enabled, the system will extract text content from web pages and YouTube video transcripts")
+                                 help="When enabled, the system will extract text content from web pages and YouTube video metadata. Note: YouTube transcript extraction may be limited due to bot detection.")
         
-        if st.button("🔄 Update Knowledge Base"):
+        if extract_urls:
+            st.info("Content extraction enabled: Web pages and YouTube metadata will be extracted and included in search.")
+        
+        if st.button("Update Knowledge Base"):
             with st.spinner("Updating knowledge base..."):
                 # Update data manager setting
                 if st.session_state.data_manager:
@@ -184,7 +187,7 @@ def main():
                     
                     # Display sources
                     if sources:
-                        st.subheader("📚 Sources")
+                        st.subheader("Sources")
                         for i, source in enumerate(sources, 1):
                             with st.expander(f"Source {i}: {truncate_text(source.get('title', 'No title'), 60)}"):
                                 col1, col2 = st.columns([3, 1])
@@ -197,6 +200,8 @@ def main():
                                     if source.get('extracted_content'):
                                         content_type = source.get('content_type', 'extracted')
                                         st.write(f"**Extracted {content_type} content:** {truncate_text(source['extracted_content'], 150)}")
+                                    elif source.get('extraction_error'):
+                                        st.write(f"**Note:** Content extraction failed: {source['extraction_error']}")
                                     
                                     st.write(f"**Score:** {source.get('score', 0)}")
                                     if source.get('time'):
@@ -204,9 +209,9 @@ def main():
                                 
                                 with col2:
                                     if source.get('url'):
-                                        st.link_button("🔗 View Original", source['url'])
+                                        st.link_button("View Original", source['url'])
                                     hn_link = f"https://news.ycombinator.com/item?id={source.get('id', '')}"
-                                    st.link_button("💬 HN Discussion", hn_link)
+                                    st.link_button("HN Discussion", hn_link)
                 
                 except Exception as e:
                     st.error(f"Error generating response: {str(e)}")
@@ -217,7 +222,7 @@ def main():
                 try:
                     results = st.session_state.vector_store.search(query, top_k=num_results)
                     
-                    st.subheader(f"🔍 Search Results ({len(results)} found)")
+                    st.subheader(f"Search Results ({len(results)} found)")
                     
                     for i, result in enumerate(results, 1):
                         with st.container():
@@ -232,6 +237,8 @@ def main():
                                 if result.get('extracted_content'):
                                     content_type = result.get('content_type', 'extracted')
                                     st.write(f"**Extracted {content_type} content:** {truncate_text(result['extracted_content'], 200)}")
+                                elif result.get('extraction_error'):
+                                    st.write(f"**Note:** Content extraction failed: {result['extraction_error']}")
                                 
                                 st.write(f"**Similarity Score:** {result.get('similarity_score', 0):.3f}")
                             
@@ -242,9 +249,9 @@ def main():
                             
                             with col3:
                                 if result.get('url'):
-                                    st.link_button("🔗 View Original", result['url'], key=f"orig_{i}")
+                                    st.link_button("View Original", result['url'], key=f"orig_{i}")
                                 hn_link = f"https://news.ycombinator.com/item?id={result.get('id', '')}"
-                                st.link_button("💬 HN Discussion", hn_link, key=f"hn_{i}")
+                                st.link_button("HN Discussion", hn_link, key=f"hn_{i}")
                             
                             st.divider()
                 
