@@ -15,6 +15,7 @@ except ImportError:
 from hn_data_manager import HackerNewsDataManager
 from vector_store import VectorStore
 from rag_agent import RAGAgent
+from auto_updater import AutoUpdater
 from utils import format_timestamp, truncate_text
 
 # Initialize session state
@@ -24,6 +25,8 @@ if 'rag_agent' not in st.session_state:
     st.session_state.rag_agent = None
 if 'data_manager' not in st.session_state:
     st.session_state.data_manager = None
+if 'auto_updater' not in st.session_state:
+    st.session_state.auto_updater = None
 if 'last_update' not in st.session_state:
     st.session_state.last_update = None
 if 'initialization_complete' not in st.session_state:
@@ -40,6 +43,14 @@ def initialize_system():
         
         # Initialize RAG agent
         st.session_state.rag_agent = RAGAgent(st.session_state.vector_store)
+        
+        # Initialize auto-updater
+        st.session_state.auto_updater = AutoUpdater(
+            vector_store=st.session_state.vector_store,
+            data_manager=st.session_state.data_manager,
+            update_interval_minutes=30,
+            max_new_stories=50
+        )
         
         # Load initial data if vector store is empty
         if st.session_state.vector_store.get_document_count() == 0:
@@ -120,6 +131,44 @@ def main():
         
         st.header("Knowledge Base Management")
         
+        # Auto-update controls
+        if st.session_state.auto_updater:
+            status = st.session_state.auto_updater.get_status()
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if status['is_running']:
+                    st.success("Auto-update: Running")
+                    if st.button("Stop Auto-Update"):
+                        st.session_state.auto_updater.stop_auto_update()
+                        st.rerun()
+                else:
+                    st.info("Auto-update: Stopped")
+                    if st.button("Start Auto-Update"):
+                        st.session_state.auto_updater.start_auto_update()
+                        st.rerun()
+            
+            with col2:
+                if st.button("Check for New Posts Now"):
+                    with st.spinner("Checking for new posts..."):
+                        new_count = st.session_state.auto_updater.manual_update()
+                        if new_count > 0:
+                            st.success(f"Added {new_count} new posts!")
+                            st.session_state.last_update = datetime.now()
+                        else:
+                            st.info("No new posts found")
+                    st.rerun()
+        
+        # Display auto-update status
+        if st.session_state.auto_updater:
+            status = st.session_state.auto_updater.get_status()
+            st.write(f"**Update interval:** {status['update_interval_minutes']:.0f} minutes")
+            st.write(f"**Posts tracked:** {status['processed_count']:,}")
+            if status['last_update']:
+                st.write(f"**Last auto-update:** {format_timestamp(status['last_update'])}")
+        
+        st.divider()
+        
         # URL content extraction toggle
         extract_urls = st.checkbox("Extract content from URLs & YouTube videos", value=True, 
                                  help="When enabled, the system will extract text content from web pages and YouTube video metadata. Note: YouTube transcript extraction may be limited due to bot detection.")
@@ -127,7 +176,7 @@ def main():
         if extract_urls:
             st.info("Content extraction enabled: Web pages and YouTube metadata will be extracted and included in search.")
         
-        if st.button("Update Knowledge Base"):
+        if st.button("Manual Full Update"):
             with st.spinner("Updating knowledge base..."):
                 # Update data manager setting
                 if st.session_state.data_manager:

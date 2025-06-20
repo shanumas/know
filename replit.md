@@ -111,6 +111,12 @@ Changelog:
   - Updated vector embeddings to include extracted content from URLs
   - Added user controls for content extraction settings
   - Fixed generic YouTube content extraction issue
+- June 20, 2025. Added automatic knowledge base updates:
+  - Created AutoUpdater class for continuous monitoring of new HackerNews posts
+  - Added background thread for automatic updates every 30 minutes
+  - Integrated manual update checks and auto-update controls in UI
+  - Tracks processed story IDs to avoid duplicates
+  - Configurable update intervals and story limits
 ```
 
 ## User Preferences
