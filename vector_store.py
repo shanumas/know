@@ -69,7 +69,16 @@ class VectorStore:
         if not documents:
             return
         
-        self.logger.info(f"Adding {len(documents)} documents to vector store...")
+        self.logger.info(f"Adding {len(documents)} stories to vector store...")
+        
+        #For documents that are too large, we can chunk them into pieces smaller than 1000 characters
+        all_chunks = []
+        for doc in documents:
+            all_chunks.extend(self.chunk_document(doc))
+
+        documents = all_chunks
+        
+        self.logger.info(f"Adding {len(documents)} chunks to vector store...")
         
         # Filter out documents that already exist
         new_documents = []
@@ -257,3 +266,27 @@ class VectorStore:
             return 0.0
         
         return dot_product / (mag1 * mag2)
+    
+    def chunk_document(self, doc: Dict, chunk_size: int = 1000, overlap: int = 100) -> List[Dict]:
+        """Splits a document into smaller chunks."""
+        text = doc.get('text', "")
+        if not text:
+            return [doc]
+
+        chunks = []
+        start = 0
+        doc_id = doc.get("id", "unknown")
+
+        while start < len(text):
+            end = min(start + chunk_size, len(text))
+            chunk_text = text[start:end]
+
+            chunk = doc.copy()
+            chunk["text"] = chunk_text
+            chunk["chunk_id"] = f"{doc_id}_{start//chunk_size}"
+            chunks.append(chunk)
+
+            start += chunk_size - overlap  # Move with overlap
+
+        return chunks
+
