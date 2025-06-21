@@ -7,6 +7,9 @@ import math
 import re
 from collections import Counter
 
+CHUNK_SIZE = 1000  # Maximum size of each text chunk, can be adjusted as needed
+CHUNK_OVERLAP = 100  # Overlap size for text chunks, can be adjusted as needed
+
 class VectorStore:
     
     def __init__(self, model_name: str = "simple-tfidf", index_file: str = "hn_index.json", metadata_file: str = "hn_metadata.pkl"):
@@ -68,6 +71,8 @@ class VectorStore:
         """Add documents to the vector store"""
         if not documents:
             return
+        
+        self.stories_count = len(documents)
         
         self.logger.info(f"Adding {len(documents)} stories to vector store...")
         
@@ -141,8 +146,13 @@ class VectorStore:
         
         return results
     
+
+    def get_stories_count(self) -> int:
+        """Get the number of stories received by the vector store"""
+        return self.doc_count
+    
     def get_document_count(self) -> int:
-        """Get the number of documents in the vector store"""
+        """Get the number of chunks put into the vector store"""
         return self.doc_count
     
     def get_existing_ids(self) -> set:
@@ -266,27 +276,64 @@ class VectorStore:
             return 0.0
         
         return dot_product / (mag1 * mag2)
-    
-    def chunk_document(self, doc: Dict, chunk_size: int = 1000, overlap: int = 100) -> List[Dict]:
-        """Splits a document into smaller chunks."""
+
+    def chunk_document(self, doc: Dict) -> List[Dict]:
         text = doc.get('text', "")
         if not text:
             return [doc]
 
+        splits = self._recursive_split(text, CHUNK_SIZE)
+        
         chunks = []
-        start = 0
         doc_id = doc.get("id", "unknown")
-
-        while start < len(text):
-            end = min(start + chunk_size, len(text))
-            chunk_text = text[start:end]
-
+        for i, chunk_text in enumerate(splits):
             chunk = doc.copy()
             chunk["text"] = chunk_text
-            chunk["chunk_id"] = f"{doc_id}_{start//chunk_size}"
+            chunk["chunk_id"] = f"{doc_id}_{i}"
             chunks.append(chunk)
-
-            start += chunk_size - overlap  # Move with overlap
-
         return chunks
+
+    def _recursive_split(self, text: str, CHUNK_SIZE: int) -> List[str]:
+        """
+        Recursively splits text by separators to create chunks with overlap.
+        """
+        separators = ["\n\n", "\n", ".", "!", "?", ",", " ", ""]  # Hierarchy of split levels
+        
+        def split_on_separator(text, separator):
+            if separator == "":
+                # fallback: split by fixed length if no other separator found
+                return [text[i:i+CHUNK_SIZE] for i in range(0, len(text), CHUNK_SIZE)]
+            return [s + (separator if i < len(text.split(separator)) - 1 else "") for i, s in enumerate(text.split(separator))]
+
+        # Start splitting from higher-level separators down to characters
+        for sep in separators:
+            parts = split_on_separator(text, sep)
+            chunks = []
+            current_chunk = ""
+            for part in parts:
+                if len(current_chunk) + len(part) > CHUNK_SIZE:
+                    if current_chunk:
+                        chunks.append(current_chunk)
+                    current_chunk = part[-CHUNK_OVERLAP:]  # overlap for next chunk
+                else:
+                    current_chunk += part
+            if current_chunk:
+                chunks.append(current_chunk)
+
+            # If all chunks fit CHUNK_SIZE, return chunks, else recurse deeper
+            if all(len(chunk) <= CHUNK_SIZE for chunk in chunks):
+                return chunks
+            else:
+                # recurse on each chunk to split further
+                new_chunks = []
+                for chunk in chunks:
+                    if len(chunk) > CHUNK_SIZE:
+                        new_chunks.extend(self._recursive_split(chunk, CHUNK_SIZE, CHUNK_OVERLAP))
+                    else:
+                        new_chunks.append(chunk)
+                return new_chunks
+
+        # Fallback, return original text if nothing works
+        return [text]
+
 

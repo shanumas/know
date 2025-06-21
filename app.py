@@ -129,8 +129,10 @@ def main():
             st.write(f"Last updated: {format_timestamp(st.session_state.last_update)}")
             
             if st.session_state.vector_store:
+                stories_count = st.session_state.vector_store.get_stories_count()
                 doc_count = st.session_state.vector_store.get_document_count()
-                st.metric("Documents in KB", doc_count)
+                st.metric("Number of stories", stories_count)
+                st.metric("Chunks", doc_count)
         else:
             st.warning("System Not Ready")
         
