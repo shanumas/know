@@ -5,7 +5,7 @@ from urllib.parse import urlparse, parse_qs
 import requests
 import json
 
-MAX_DESCRIPTION_LENGTH = 100000  # 100,000 characters is the maximum length for a description
+MAX_SAFE_TOKEN_LENGTH = 1000  # 100,0 characters is the maximum length for a description
 
 # Import optional dependencies
 try:
@@ -166,8 +166,9 @@ class ContentExtractor:
                     clean_desc = description.replace('\n', ' ').strip()
                     self.logger.info('Clean_desc length: ' +
                                      str(len(clean_desc)))
-                    if len(clean_desc) > MAX_DESCRIPTION_LENGTH:
-                        clean_desc = clean_desc[:MAX_DESCRIPTION_LENGTH] + "..."
+                    # Limit description length to avoid excessive tokens, this will not happen, because chunk size is limited to 1000 tokens, but still
+                    if len(clean_desc) > MAX_SAFE_TOKEN_LENGTH:
+                        clean_desc = clean_desc[:MAX_SAFE_TOKEN_LENGTH] + "..."
                     content_parts.append(f"Description: {clean_desc}")
                 if transcript_text:
                     content_parts.append(f"Transcript: {transcript_text}")
