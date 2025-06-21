@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 import threading
 import os
 
+AUTO_UPDATE_INTERVAL = 30  # in minutes
+
+
 # Import pandas with fallback
 try:
     import pandas as pd
@@ -48,7 +51,7 @@ def initialize_system():
         st.session_state.auto_updater = AutoUpdater(
             vector_store=st.session_state.vector_store,
             data_manager=st.session_state.data_manager,
-            update_interval_minutes=30,
+            update_interval_minutes=AUTO_UPDATE_INTERVAL,#in minutes
             max_new_stories=50
         )
         
