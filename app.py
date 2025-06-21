@@ -3,7 +3,13 @@ import time
 from datetime import datetime, timedelta
 import threading
 import os
+from hn_data_manager import HackerNewsDataManager
+from vector_store import VectorStore
+from rag_agent import RAGAgent
+from auto_updater import AutoUpdater
+from utils import format_timestamp, truncate_text
 
+STORIES_LIMIT = 100  # Limit for initial data load
 AUTO_UPDATE_INTERVAL = 30  # in minutes
 
 
@@ -14,14 +20,6 @@ try:
 except ImportError:
     PANDAS_AVAILABLE = False
     st.warning("Pandas not available - some features may be limited")
-
-from hn_data_manager import HackerNewsDataManager
-from vector_store import VectorStore
-from rag_agent import RAGAgent
-from auto_updater import AutoUpdater
-from utils import format_timestamp, truncate_text
-
-STORIES_LIMIT = 10  # Limit for initial data load
 
 # Initialize session state
 if 'vector_store' not in st.session_state:

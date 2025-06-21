@@ -277,12 +277,12 @@ class VectorStore:
         
         return dot_product / (mag1 * mag2)
 
-    def chunk_document(self, doc: Dict) -> List[Dict]:
+    def chunk_document(self, doc: Dict, chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP) -> List[Dict]:
         text = doc.get('text', "")
         if not text:
             return [doc]
 
-        splits = self._recursive_split(text, CHUNK_SIZE)
+        splits = self._recursive_split(text, chunk_size, chunk_overlap)
         
         chunks = []
         doc_id = doc.get("id", "unknown")
@@ -293,47 +293,53 @@ class VectorStore:
             chunks.append(chunk)
         return chunks
 
-    def _recursive_split(self, text: str, CHUNK_SIZE: int) -> List[str]:
-        """
-        Recursively splits text by separators to create chunks with overlap.
-        """
-        separators = ["\n\n", "\n", ".", "!", "?", ",", " ", ""]  # Hierarchy of split levels
-        
+
+    def _recursive_split(self, text: str, chunk_size: int, chunk_overlap: int, depth=0, max_depth=5) -> List[str]:
+        separators = ["\n\n", "\n", ".", "!", "?", ",", " ", ""]  # from coarse to fine
+
         def split_on_separator(text, separator):
             if separator == "":
-                # fallback: split by fixed length if no other separator found
-                return [text[i:i+CHUNK_SIZE] for i in range(0, len(text), CHUNK_SIZE)]
-            return [s + (separator if i < len(text.split(separator)) - 1 else "") for i, s in enumerate(text.split(separator))]
+                # fallback: split by fixed length if no separator found
+                return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+            parts = text.split(separator)
+            # add separator back except for last part
+            return [p + (separator if i < len(parts) - 1 else "") for i, p in enumerate(parts)]
 
-        # Start splitting from higher-level separators down to characters
+        if depth > max_depth:
+            return [text]
+
         for sep in separators:
             parts = split_on_separator(text, sep)
             chunks = []
             current_chunk = ""
+
             for part in parts:
-                if len(current_chunk) + len(part) > CHUNK_SIZE:
+                if len(current_chunk) + len(part) > chunk_size:
                     if current_chunk:
                         chunks.append(current_chunk)
-                    current_chunk = part[-CHUNK_OVERLAP:]  # overlap for next chunk
+                        current_chunk = current_chunk[-chunk_overlap:] + part
+                    else:
+                        current_chunk = part
                 else:
                     current_chunk += part
+
             if current_chunk:
                 chunks.append(current_chunk)
 
-            # If all chunks fit CHUNK_SIZE, return chunks, else recurse deeper
-            if all(len(chunk) <= CHUNK_SIZE for chunk in chunks):
+            # Only return if multiple chunks and all within chunk_size
+            if len(chunks) > 1 and all(len(chunk) <= chunk_size for chunk in chunks):
                 return chunks
-            else:
-                # recurse on each chunk to split further
-                new_chunks = []
-                for chunk in chunks:
-                    if len(chunk) > CHUNK_SIZE:
-                        new_chunks.extend(self._recursive_split(chunk, CHUNK_SIZE, CHUNK_OVERLAP))
-                    else:
-                        new_chunks.append(chunk)
-                return new_chunks
 
-        # Fallback, return original text if nothing works
-        return [text]
+        # If none of the separators worked to split into multiple chunks, recurse deeper or fallback
+        new_chunks = []
+        for chunk in [text]:
+            if len(chunk) > chunk_size and depth < max_depth:
+                new_chunks.extend(self._recursive_split(chunk, chunk_size, chunk_overlap, depth + 1, max_depth))
+            else:
+                new_chunks.append(chunk)
+
+        return new_chunks
+
+
 
 
