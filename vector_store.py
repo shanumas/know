@@ -7,28 +7,13 @@ import math
 import re
 from collections import Counter
 
-# Simple fallback without heavy dependencies
-try:
-    import numpy as np
-    NUMPY_AVAILABLE = True
-except ImportError:
-    NUMPY_AVAILABLE = False
-
-try:
-    import faiss
-    FAISS_AVAILABLE = True
-except ImportError:
-    FAISS_AVAILABLE = False
-
 class VectorStore:
-    """FAISS-based vector store for semantic search"""
     
     def __init__(self, model_name: str = "simple-tfidf", index_file: str = "hn_index.json", metadata_file: str = "hn_metadata.pkl"):
         self.model_name = model_name
         self.index_file = index_file
         self.metadata_file = metadata_file
         
-        # Use simple in-memory search without FAISS
         self.documents = []  # Store all documents with embeddings
         self.metadata = []  # Store document metadata
         self.id_to_idx = {}  # Map document IDs to index positions

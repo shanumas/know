@@ -9,7 +9,7 @@ dependencies = [
     "streamlit>=1.46.0",
     "requests>=2.25.0",
     "trafilatura>=1.6.0",
-    "yt-dlp>=2023.0.0",
+    "yt-dlp>=2025.06.09",
 ]
 
 [[tool.uv.index]]

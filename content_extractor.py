@@ -114,31 +114,48 @@ class ContentExtractor:
                 self.logger.info(f"Extracting YouTube content from: {url}")
                 info = ydl.extract_info(url, download=False)
 
-                if not info:
-                    raise Exception("Could not extract video information")
-
-                title = info.get('title', '')
-                description = info.get('description', '')
-                duration = info.get('duration', 0)
-
                 # Try multiple methods to get transcript
                 transcript_text = ''
 
-                self.logger.info(
-                    f"Before collecting Transcript text:  {transcript_text}")
-                # Method 1: Try to get subtitles from info
-                if info.get('subtitles') or info.get('automatic_captions'):
+                if not info:
+                        self.logger.warning(f"yt-dlp failed to extract info for: {url}")    
+                        # Try a fallback extraction method (e.g. `youtube_transcript_api`)
+                        try:
+                            transcript_text = self._extract_transcript_alternative(url)
+                            return {
+                                'text': f'Transcript: {transcript_text}',
+                                'title': '',
+                                'content_type': 'youtube',
+                                'success': bool(transcript_text),
+                                'error': None if transcript_text else 'No content could be extracted'
+                            }
+                        except Exception as e:
+                            return {
+                                'text': '',
+                                'title': '',
+                                'content_type': 'youtube',
+                                'success': False,
+                                'error': f'Fallback method failed: {str(e)}'
+                            }
+                else:
+                    title = info.get('title', '')
+                    description = info.get('description', '')
+                    duration = info.get('duration', 0)
                     self.logger.info(
-                        f"Inside Transcript text collection:  {transcript_text}"
-                    )
-                    transcript_text = self._extract_subtitles(info)
-                    self.logger.info(
-                        f"After subtitles text collection:  {transcript_text}")
-                    # Method 2: If no subtitles found, try alternative approach
-                    #if not transcript_text:
-                    transcript_text += self._extract_transcript_alternative(
-                        url)
-                    self.logger.info(f"Transcript text:  {transcript_text}")
+                        f"Before collecting Transcript text:  {transcript_text}")
+                    # Method 1: Try to get subtitles from info
+                    if info.get('subtitles') or info.get('automatic_captions'):
+                        self.logger.info(
+                            f"Inside Transcript text collection:  {transcript_text}"
+                        )
+                        transcript_text = self._extract_subtitles(info)
+                        self.logger.info(
+                            f"After subtitles text collection:  {transcript_text}")
+                        # Method 2: If no subtitles found, try alternative approach
+                        #if not transcript_text:
+                        transcript_text += self._extract_transcript_alternative(
+                            url)
+                        self.logger.info(f"Transcript text:  {transcript_text}")
 
                 # Combine all text content
                 content_parts = []
@@ -250,7 +267,7 @@ class ContentExtractor:
         return text
 
     def _extract_transcript_alternative(self, url: str) -> str:
-        """Alternative method to extract transcript using simpler approach"""
+        """Alternative method to extract transcript using simpler approach with Simpler-subtitleslangs, No-writesubtitles-or-subtitlesformat, etc"""
         self.logger.info(f"Transcript alternative extraction:")
         try:
             # Try to get basic video info and any available transcript

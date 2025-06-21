@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment
+.venv/
+
+# Streamlit-specific
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# VSCode settings
+.vscode/
+
+# Replit files
+.replit
+replit.md
+
+# Project metadata / lock files
+*.pkl
+*.json
+*.lock
+
+# Ignore test output or cache
+*.log
+*.tmp
+*.cache
+
+# Python packaging
+dist/
+build/
+*.egg-info/
+
+# OS files
+.DS_Store
+Thumbs.db
