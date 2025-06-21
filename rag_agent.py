@@ -30,6 +30,9 @@ class RAGAgent:
         if not retrieved_docs:
             return "I couldn't find any relevant information in the HackerNews knowledge base for your query.", []
         
+        # Sort by score descending
+        retrieved_docs = sorted(retrieved_docs, key=lambda x: x.get("score", 0), reverse=True)
+        
         # Prepare context from retrieved documents
         context = self._prepare_context(retrieved_docs)
         
