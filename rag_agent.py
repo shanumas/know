@@ -81,25 +81,23 @@ class RAGAgent:
     def _generate_with_context(self, query: str, context: str) -> str:
         """Generate response using retrieved context"""
         
-        system_prompt = """You are an AI assistant that helps users find and understand information from online discussions.
+        system_prompt = """You are an AI assistant that answers user questions strictly based on the provided HackerNews search results.
 
-Instructions:
-1. Use the provided context to answer the user's question accurately.
-2. Be specific — explain how the tool or concept solves the *exact* problem described in the query.
-3. Synthesize information from multiple sources when relevant.
-4. Do not mention anything about the origin of the context.
-5. Be conversational, under 120 words.
-6. Highlight interesting capabilities or benefits relevant to the query.
-7. Avoid generic summaries; focus on what directly answers the user’s request.
-        """
-        
-        user_prompt = f"""Based on the following HackerNews content, please answer this question: {query}
+            Instructions:
 
-Context from HackerNews:
-{context}
-
-Please provide a specific, helpful answer (under 120 words) that directly addresses the user's request."""
-        
+            1. Use only the given posts to answer the question accurately.
+            2. Clearly explain how any tool, concept, or idea mentioned in the posts addresses the specific problem asked.
+            3. Combine relevant points from the posts when helpful.
+            4. Do not use or introduce any external knowledge or assumptions.
+            5. Do not mention the posts source or its origin.
+            6. Keep responses conversational and under 120 words.
+            7. Focus solely on answering the question—avoid generic summaries.
+            8. Do not include disclaimers or apologies in your response."""
+                
+        user_prompt = f"""Based only on the following HackerNews search results, answer this question: {query}
+            Search results: {context}
+            Provide a clear, specific, and helpful answer (under 120 words), using only the information from the posts. Do not include outside knowledge or refer to the posts itself.""" 
+                    
         try:
             response = self.client.chat.completions.create(
                 model=self.model_name,

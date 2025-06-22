@@ -105,8 +105,6 @@ class ContentExtractor:
                 'subtitleslangs': ['en', 'en-US', 'en-GB', 'en-auto'],
                 'ignoreerrors': True,
                 'extract_flat': False,
-                'format':
-                'worst[height<=144]',  # We don't need video, just metadata
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -145,17 +143,11 @@ class ContentExtractor:
                         f"Before collecting Transcript text:  {transcript_text}")
                     # Method 1: Try to get subtitles from info
                     if info.get('subtitles') or info.get('automatic_captions'):
-                        self.logger.info(
-                            f"Inside Transcript text collection:  {transcript_text}"
-                        )
                         transcript_text = self._extract_subtitles(info)
-                        self.logger.info(
-                            f"After subtitles text collection:  {transcript_text}")
                         # Method 2: If no subtitles found, try alternative approach
                         #if not transcript_text:
                         transcript_text += self._extract_transcript_alternative(
                             url)
-                        self.logger.info(f"Transcript text:  {transcript_text}")
 
                 # Combine all text content
                 content_parts = []
@@ -164,8 +156,6 @@ class ContentExtractor:
                 if description and len(description.strip()) > 10:
                     # Clean and limit description
                     clean_desc = description.replace('\n', ' ').strip()
-                    self.logger.info('Clean_desc length: ' +
-                                     str(len(clean_desc)))
                     # Limit description length to avoid excessive tokens, this will not happen, because chunk size is limited to 1000 tokens, but still
                     if len(clean_desc) > MAX_SAFE_TOKEN_LENGTH:
                         clean_desc = clean_desc[:MAX_SAFE_TOKEN_LENGTH] + "..."
@@ -673,14 +663,17 @@ class ContentExtractor:
         extracted = self.extract_content(url)
 
         if extracted['success'] and extracted['text']:
-            # Add extracted content to document
-            enhanced_doc['extracted_content'] = extracted['text']
+            # Don't use extracted_content at all, because we add it to text
+            #enhanced_doc['extracted_content'] = extracted['text']
             enhanced_doc['extracted_title'] = extracted['title']
             enhanced_doc['content_type'] = extracted['content_type']
 
             # If document doesn't have text content, use extracted content
             if not document.get('text'):
                 enhanced_doc['text'] = extracted['text']
+            else:
+                # Because we want to chunk extracted content with the main text
+                enhanced_doc['text'] += '\n\n' + extracted['text']
 
             self.logger.info(
                 f"Enhanced document {document.get('id', 'unknown')} with {extracted['content_type']} content"

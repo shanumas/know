@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from content_extractor import ContentExtractor
+from text_cleaner import TextCleaner
 
 class HackerNewsDataManager:
     """Manages data fetching from HackerNews API"""
@@ -112,6 +113,8 @@ class HackerNewsDataManager:
             except Exception as e:
                 self.logger.warning(f"Failed to extract URL content for story {story['id']}: {e}")
                 story_data['extraction_error'] = str(e)
+
+        story_data['text'] = TextCleaner.clean_extracted_text(story_data.get('text', '').strip())
         
         return story_data
     
