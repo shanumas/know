@@ -10,7 +10,7 @@ from auto_updater import AutoUpdater
 from utils import format_timestamp, truncate_text
 
 STORIES_LIMIT = 50  # Limit for initial data load
-AUTO_UPDATE_INTERVAL = 5  # in minutes
+AUTO_UPDATE_INTERVAL = 60 * 24 * 10  # I dont want this audo update to be run more frequently
 
 
 # Import pandas with fallback
@@ -34,6 +34,10 @@ if 'last_update' not in st.session_state:
     st.session_state.last_update = None
 if 'initialization_complete' not in st.session_state:
     st.session_state.initialization_complete = False
+if 'handled_ids' not in st.session_state:
+    st.session_state.handled_ids = set()
+if "all_docs" not in st.session_state:
+    st.session_state.all_docs = []
 
 def initialize_system():
     """Initialize the RAG system components"""
@@ -60,6 +64,7 @@ def initialize_system():
             with st.spinner("Loading initial HackerNews data... This may take a few minutes."):
                 stories = st.session_state.data_manager.fetch_new_stories(limit=STORIES_LIMIT)
                 if stories:
+                    st.session_state.stories_count = len(stories)
                     st.session_state.vector_store.add_documents(stories)
                     st.session_state.last_update = datetime.now()
                     return True
@@ -129,80 +134,45 @@ def main():
             if st.session_state.vector_store:
                 stories_count = st.session_state.vector_store.get_stories_count()
                 doc_count = st.session_state.vector_store.get_document_count()
-                st.metric("Number of stories", stories_count)
-                st.metric("Chunks", doc_count)
+                st.metric("Stories added just now: ", stories_count)
+                st.metric("Initial Chunks:", doc_count)
         else:
             st.warning("System Not Ready")
         
         st.header("Knowledge Base Management")
         
         # Auto-update controls
-        if st.session_state.auto_updater:
-            status = st.session_state.auto_updater.get_status()
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if status['is_running']:
-                    st.success("Auto-update: Running")
-                    if st.button("Stop Auto-Update"):
-                        st.session_state.auto_updater.stop_auto_update()
-                        st.rerun()
+        if st.button("Check for New Posts Now"):
+            with st.spinner("Checking for new posts..."):
+                new_count = st.session_state.auto_updater.manual_update()
+                if new_count > 0:
+                    st.success(f"Added {new_count} new posts!")
+                    st.session_state.last_update = datetime.now()
                 else:
-                    st.info("Auto-update: Stopped")
-                    if st.button("Start Auto-Update"):
-                        st.session_state.auto_updater.start_auto_update()
-                        st.rerun()
-            
-            with col2:
-                if st.button("Check for New Posts Now"):
-                    with st.spinner("Checking for new posts..."):
-                        new_count = st.session_state.auto_updater.manual_update()
-                        if new_count > 0:
-                            st.success(f"Added {new_count} new posts!")
-                            st.session_state.last_update = datetime.now()
-                        else:
-                            st.info("No new posts found")
-                    st.rerun()
-        
-        # Display auto-update status
-        if st.session_state.auto_updater:
-            status = st.session_state.auto_updater.get_status()
-            st.write(f"**Update interval:** {status['update_interval_minutes']:.0f} minutes")
-            st.write(f"**Posts tracked:** {status['processed_count']:,}")
-            if status['last_update']:
-                st.write(f"**Last auto-update:** {format_timestamp(status['last_update'])}")
-        
-        st.divider()
-        
-        # URL content extraction toggle
-        extract_urls = st.checkbox("Extract content from URLs & YouTube videos", value=True, 
-                                 help="When enabled, the system will extract text content from web pages and YouTube video metadata. Note: YouTube transcript extraction may be limited due to bot detection.")
-        
-        if extract_urls:
-            st.info("Content extraction enabled: Web pages and YouTube metadata will be extracted and included in search.")
-        
-        if st.button("Manual Full Update"):
-            with st.spinner("Updating knowledge base..."):
-                # Update data manager setting
-                if st.session_state.data_manager:
-                    st.session_state.data_manager.extract_url_content = extract_urls
-                
-                new_docs = update_knowledge_base()
-                if new_docs > 0:
-                    st.success(f"Added {new_docs} new documents!")
-                else:
-                    st.info("No new documents to add.")
-        
-        # Auto-update toggle
-        auto_update = st.checkbox("Auto-update every hour", value=False)
-        
-        if auto_update and st.session_state.last_update:
-            time_since_update = datetime.now() - st.session_state.last_update
-            if time_since_update > timedelta(hours=1):
-                st.info("Auto-update triggered...")
-                new_docs = update_knowledge_base()
-                if new_docs > 0:
-                    st.success(f"Auto-update: Added {new_docs} new documents!")
+                    st.info("No new posts found")
+            st.rerun()
+
+        # List all stories in the knowledge base
+        if st.session_state.vector_store:
+            if "all_docs" not in st.session_state:
+                st.session_state.all_docs = []
+
+            if st.session_state.vector_store:
+                new_docs = st.session_state.vector_store.get_all_stories()
+                if new_docs:
+                    # Create a set of existing ids for fast lookup
+                    existing_ids = {doc.get("id") for doc in st.session_state.all_docs}
+                    for doc in new_docs:
+                        doc_id = doc.get("id")
+                        if doc_id not in existing_ids:
+                            st.session_state.all_docs.append(doc)
+                            existing_ids.add(doc_id)
+
+                    st.subheader("📚 All Stored Stories")
+                    for doc in st.session_state.all_docs:
+                        title = doc.get("title", "No title")
+                        hn_link = f"https://news.ycombinator.com/item?id={doc.get('id', '')}"
+                        st.markdown(f"- [{title}]({hn_link})")
     
     # Main search interface
     if not st.session_state.initialization_complete:

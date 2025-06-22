@@ -28,6 +28,7 @@ class VectorStore:
         self.vocabulary = {}
         self.idf_scores = {}
         self.doc_count = 0
+        self.stories_count = 0
         
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
@@ -77,7 +78,8 @@ class VectorStore:
         if not documents:
             return
         
-        self.stories_count = len(documents)
+        documents_before_chunking = documents.copy()
+        self.stories_count = len(documents_before_chunking)
         
         self.logger.info(f"Adding {len(documents)} stories to vector store...")
         
@@ -151,10 +153,14 @@ class VectorStore:
         
         return results
     
+    def get_all_stories(self) -> int:
+        """Get all stories"""
+        return self.documents
+    
 
     def get_stories_count(self) -> int:
         """Get the number of stories received by the vector store"""
-        return self.doc_count
+        return self.stories_count
     
     def get_document_count(self) -> int:
         """Get the number of chunks put into the vector store"""

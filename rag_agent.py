@@ -96,7 +96,8 @@ class RAGAgent:
                 
         user_prompt = f"""Based only on the following HackerNews search results, answer this question: {query}
             Search results: {context}
-            Provide a clear, specific, and helpful answer (under 120 words), using only the information from the posts. Do not include outside knowledge or refer to the posts itself.""" 
+            Provide a clear, specific, and helpful answer (under 150 words), using only the information from the posts. Do not include outside knowledge or refer to the posts itself.
+            Include title of the source or project""" 
                     
         try:
             response = self.client.chat.completions.create(
