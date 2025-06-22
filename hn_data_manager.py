@@ -59,15 +59,6 @@ class HackerNewsDataManager:
         url = f"{self.base_url}/item/{item_id}.json"
         return self._make_request(url)
     
-    def get_top_stories(self, limit: int = 500) -> List[int]:
-        """Fetch top story IDs"""
-        url = f"{self.base_url}/topstories.json"
-        story_ids = self._make_request(url)
-        
-        if story_ids:
-            return story_ids[:limit]
-        return []
-    
     def get_new_stories(self, limit: int = 500) -> List[int]:
         """Fetch new story IDs"""
         url = f"{self.base_url}/newstories.json"
@@ -148,9 +139,9 @@ class HackerNewsDataManager:
         
         return comments
     
-    def fetch_top_stories(self, limit: int = 100) -> List[Dict]:
-        """Fetch top stories with full details"""
-        story_ids = self.get_top_stories(limit * 2)  # Get more IDs in case some are filtered out
+    def fetch_new_stories(self, limit: int = 100) -> List[Dict]:
+        """Fetch new stories with full details"""
+        story_ids = self.get_new_stories(limit * 2)  # Get more IDs in case some are filtered out
         stories = []
         
         self.logger.info(f"Fetching details for {len(story_ids)} stories...")
@@ -170,29 +161,6 @@ class HackerNewsDataManager:
                         break
         
         self.logger.info(f"Successfully fetched {len(stories)} stories")
-        return stories
-    
-    def fetch_new_stories(self, limit: int = 50) -> List[Dict]:
-        """Fetch new stories with full details"""
-        story_ids = self.get_new_stories(limit * 2)
-        stories = []
-        
-        self.logger.info(f"Fetching details for {len(story_ids)} new stories...")
-        
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_id = {
-                executor.submit(self.fetch_story_details, story_id): story_id 
-                for story_id in story_ids
-            }
-            
-            for future in as_completed(future_to_id):
-                story = future.result()
-                if story:
-                    stories.append(story)
-                    if len(stories) >= limit:
-                        break
-        
-        self.logger.info(f"Successfully fetched {len(stories)} new stories")
         return stories
     
     def get_user_info(self, username: str) -> Optional[Dict]:

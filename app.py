@@ -58,7 +58,7 @@ def initialize_system():
         # Load initial data if vector store is empty
         if st.session_state.vector_store.get_document_count() == 0:
             with st.spinner("Loading initial HackerNews data... This may take a few minutes."):
-                stories = st.session_state.data_manager.fetch_top_stories(limit=STORIES_LIMIT)
+                stories = st.session_state.data_manager.fetch_new_stories(limit=STORIES_LIMIT)
                 if stories:
                     st.session_state.vector_store.add_documents(stories)
                     st.session_state.last_update = datetime.now()
