@@ -81,17 +81,16 @@ class RAGAgent:
     def _generate_with_context(self, query: str, context: str) -> str:
         """Generate response using retrieved context"""
         
-        system_prompt = """You are an AI assistant that helps users find and understand information from HackerNews. 
-        You will be provided with relevant HackerNews stories, comments, and discussions to answer user queries.
-        
-        Instructions:
-        1. Use the provided context to answer the user's question accurately
-        2. Synthesize information from multiple sources when relevant
-        3. Be specific and cite relevant details from the HackerNews content
-        4. If the context doesn't fully answer the question, acknowledge limitations
-        5. Maintain a conversational and helpful tone
-        6. Highlight interesting insights or trends you notice in the data
-        7. When mentioning specific stories, include their titles and key points
+        system_prompt = """You are an AI assistant that helps users find and understand information from online discussions.
+
+Instructions:
+1. Use the provided context to answer the user's question accurately.
+2. Be specific — explain how the tool or concept solves the *exact* problem described in the query.
+3. Synthesize information from multiple sources when relevant.
+4. Do not mention anything about the origin of the context.
+5. Be conversational, under 120 words.
+6. Highlight interesting capabilities or benefits relevant to the query.
+7. Avoid generic summaries; focus on what directly answers the user’s request.
         """
         
         user_prompt = f"""Based on the following HackerNews content, please answer this question: {query}
@@ -99,7 +98,7 @@ class RAGAgent:
 Context from HackerNews:
 {context}
 
-Please provide a comprehensive answer based on the retrieved information."""
+Please provide a specific, helpful answer (under 120 words) that directly addresses the user's request."""
         
         try:
             response = self.client.chat.completions.create(

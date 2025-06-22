@@ -8,14 +8,15 @@ import re
 from collections import Counter
 from sentence_transformers import SentenceTransformer
 import numpy as np
+import torch
 
-CHUNK_SIZE = 1000  # Maximum size of each text chunk, can be adjusted as needed
-CHUNK_OVERLAP = 100  # Overlap size for text chunks, can be adjusted as needed
+from chunk_util import ChunkUtil
 
 class VectorStore:
     
     def __init__(self, model_name: str = "all-MiniLM-L6-v2", index_file: str = "hn_index.json", metadata_file: str = "hn_metadata.pkl"):
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 
         self.model_name = model_name
         self.index_file = index_file
@@ -83,7 +84,7 @@ class VectorStore:
         #For documents that are too large, we can chunk them into pieces smaller than 1000 characters
         all_chunks = []
         for doc in documents:
-            all_chunks.extend(self.chunk_document(doc))
+            all_chunks.extend(ChunkUtil.chunk_document(doc))
 
         documents = all_chunks
         
@@ -220,7 +221,7 @@ class VectorStore:
         self.logger.info("Vector store cleared")
     
     def _simple_encode(self, texts: List[str]) -> List[List[float]]:
-        return self.embedding_model.encode(texts, convert_to_numpy=False)
+        return [embedding.tolist() for embedding in self.embedding_model.encode(texts, convert_to_numpy=True)]
     
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
         vec1 = np.array(vec1)
@@ -228,70 +229,3 @@ class VectorStore:
         if np.linalg.norm(vec1) == 0 or np.linalg.norm(vec2) == 0:
             return 0.0
         return float(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
-
-    def chunk_document(self, doc: Dict, chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP) -> List[Dict]:
-        text = doc.get('text', "")
-        if not text:
-            return [doc]
-
-        splits = self._recursive_split(text, chunk_size, chunk_overlap)
-        
-        chunks = []
-        doc_id = doc.get("id", "unknown")
-        for i, chunk_text in enumerate(splits):
-            chunk = doc.copy()
-            chunk["text"] = chunk_text
-            chunk["chunk_id"] = f"{doc_id}_{i}"
-            chunks.append(chunk)
-        return chunks
-
-
-    def _recursive_split(self, text: str, chunk_size: int, chunk_overlap: int, depth=0, max_depth=5) -> List[str]:
-        separators = ["\n\n", "\n", ".", "!", "?", ",", " ", ""]  # from coarse to fine
-
-        def split_on_separator(text, separator):
-            if separator == "":
-                # fallback: split by fixed length if no separator found
-                return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
-            parts = text.split(separator)
-            # add separator back except for last part
-            return [p + (separator if i < len(parts) - 1 else "") for i, p in enumerate(parts)]
-
-        if depth > max_depth:
-            return [text]
-
-        for sep in separators:
-            parts = split_on_separator(text, sep)
-            chunks = []
-            current_chunk = ""
-
-            for part in parts:
-                if len(current_chunk) + len(part) > chunk_size:
-                    if current_chunk:
-                        chunks.append(current_chunk)
-                        current_chunk = current_chunk[-chunk_overlap:] + part
-                    else:
-                        current_chunk = part
-                else:
-                    current_chunk += part
-
-            if current_chunk:
-                chunks.append(current_chunk)
-
-            # Only return if multiple chunks and all within chunk_size
-            if len(chunks) > 1 and all(len(chunk) <= chunk_size for chunk in chunks):
-                return chunks
-
-        # If none of the separators worked to split into multiple chunks, recurse deeper or fallback
-        new_chunks = []
-        for chunk in [text]:
-            if len(chunk) > chunk_size and depth < max_depth:
-                new_chunks.extend(self._recursive_split(chunk, chunk_size, chunk_overlap, depth + 1, max_depth))
-            else:
-                new_chunks.append(chunk)
-
-        return new_chunks
-
-
-
-
