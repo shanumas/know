@@ -1,9 +1,12 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any
+import time
 
 def format_timestamp(dt: datetime) -> str:
     """Format datetime for display"""
     if dt.tzinfo is None:
+        local_offset = -time.timezone if time.localtime().tm_isdst == 0 else -time.altzone
+        dt = dt - timedelta(seconds=local_offset)
         dt = dt.replace(tzinfo=timezone.utc)
     
     now = datetime.now(timezone.utc)

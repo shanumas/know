@@ -70,14 +70,7 @@ class AutoUpdater:
             self.logger.info("Checking for new HackerNews stories...")
             
             # Get latest story IDs (both top and new)
-            top_story_ids = self.data_manager.get_top_stories(limit=100)
             new_story_ids = self.data_manager.get_new_stories(limit=100)
-            
-            # Combine and get unique IDs
-            all_story_ids = list(set(top_story_ids + new_story_ids))
-            
-            # Filter out already processed stories
-            new_story_ids = [sid for sid in all_story_ids if sid not in self.processed_ids]
             
             if not new_story_ids:
                 self.logger.info("No new stories found")

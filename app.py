@@ -10,7 +10,7 @@ from auto_updater import AutoUpdater
 from utils import format_timestamp, truncate_text
 
 STORIES_LIMIT = 10  # Limit for initial data load
-AUTO_UPDATE_INTERVAL = 30  # in minutes
+AUTO_UPDATE_INTERVAL = 5  # in minutes
 
 
 # Import pandas with fallback
@@ -215,6 +215,8 @@ def main():
         "Enter your search query:",
         placeholder="e.g., 'What are the latest developments in AI?', 'startup funding trends', 'remote work discussions'"
     )
+    if st.button("Search"):
+        st.write("Searching for:", query)
     
     # Search options
     col1, col2 = st.columns([1, 1])
