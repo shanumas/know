@@ -25,8 +25,7 @@ Or use the preconfigured VSCode debug config to run directly with debugpy.
 - This is a quick prototype (no more than 2 days of effort).
 - Search accuracy is prioritized over performance.
 - Python and Streamlit are used for speed and simplicity.
-- Start with an in-memory vector store for fast local debugging.
-- Final step: move to Weaviate (cost-effective, easy to debug ETL pipeline remotely).
+- Start with an in-memory vector store for fast local debugging  (cost-effective, easy to debug ETL pipeline remotely). and introduce weaviate vector database later
 - Embedding model: `all-MiniLM-L6-v2` for fast and semantically rich embeddings.
 - Scraping goal: at least 95% URL success rate; 100% is not required.
 - Content is extracted from YouTube stories to preserve full context.
@@ -35,6 +34,7 @@ Or use the preconfigured VSCode debug config to run directly with debugpy.
 ## 🧠 Solution
 
 - Semantic search works reliably.
+- Failed to integrate weaviate because of time constrains, but can be done with 1-3 hours of time, if it is needed by the assesment comitee
 - Failed to enable follow-up questions like ChatGPT style, which is not so hard to implement but will take some time.
 - If a story doesn’t appear in the top results, it’s likely due to:
     - Failed URL extraction
@@ -63,12 +63,20 @@ Or use the preconfigured VSCode debug config to run directly with debugpy.
 
 - Add unit and integration tests
 - Implement LangChain `ConversationBufferMemory` (or similar) to support follow-up Q\&A like ChatGPT
-- Hybrid search with filters (e.g., by story-point, date) to improve ranking
+- Hybrid search with filters (e.g., by story-point, date) and re-ranking
+- Introduce feedback scheme from users where they can upvote or downvoe certain document
+- Self-improving prompts
+- For production, bigger models with more accuracy can be employed, depending upon customer needs, scope and budget
 
 **Add LangChain Tools to:**
 
 - Let users search through comments
 - Advanced comment-centric queries using LangChain tool, especially for digging through comments
+
+**Key Takeaway**
+    -It was easy to this assignment because I build 3 chatbots I worked at 2 different companies in the past.
+    -They were hard to build and maintain because they were of python backend and react.js frontend and weaviate for vector store
+    -Since this one is built with Streamlit, it was relatively easy
 
 
 ![Included stories shown on sidebar](https://github.com/user-attachments/assets/be81e28a-5803-46ec-a280-78daa485f984)
