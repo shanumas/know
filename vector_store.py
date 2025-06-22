@@ -6,13 +6,17 @@ import json
 import math
 import re
 from collections import Counter
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
 CHUNK_SIZE = 1000  # Maximum size of each text chunk, can be adjusted as needed
 CHUNK_OVERLAP = 100  # Overlap size for text chunks, can be adjusted as needed
 
 class VectorStore:
     
-    def __init__(self, model_name: str = "simple-tfidf", index_file: str = "hn_index.json", metadata_file: str = "hn_metadata.pkl"):
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2", index_file: str = "hn_index.json", metadata_file: str = "hn_metadata.pkl"):
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
         self.model_name = model_name
         self.index_file = index_file
         self.metadata_file = metadata_file
@@ -215,67 +219,15 @@ class VectorStore:
         
         self.logger.info("Vector store cleared")
     
-    def _simple_encode(self, texts: List[str]) -> List[Dict]:
-        """Simple TF-IDF based encoding"""
-        # Tokenize and build vocabulary
-        all_words = set()
-        tokenized_texts = []
-        
-        for text in texts:
-            # Simple tokenization
-            words = re.findall(r'\b\w+\b', text.lower())
-            tokenized_texts.append(words)
-            all_words.update(words)
-        
-        # Update vocabulary
-        for word in all_words:
-            if word not in self.vocabulary:
-                self.vocabulary[word] = len(self.vocabulary)
-        
-        # Calculate IDF scores
-        total_docs = max(self.doc_count, len(tokenized_texts))
-        for word in all_words:
-            if word not in self.idf_scores:
-                # Count documents containing this word in current batch + existing docs
-                doc_freq = sum(1 for tokens in tokenized_texts if word in tokens)
-                # Simple IDF calculation
-                self.idf_scores[word] = math.log(total_docs / max(1, doc_freq))
-        
-        # Create embeddings
-        embeddings = []
-        for tokens in tokenized_texts:
-            # Create TF-IDF vector as dict
-            tf_counts = Counter(tokens)
-            embedding = {}
-            
-            for word, tf in tf_counts.items():
-                if word in self.vocabulary:
-                    tfidf = tf * self.idf_scores.get(word, 0)
-                    embedding[word] = tfidf
-            
-            embeddings.append(embedding)
-        
-        return embeddings
+    def _simple_encode(self, texts: List[str]) -> List[List[float]]:
+        return self.embedding_model.encode(texts, convert_to_numpy=False)
     
-    def _cosine_similarity(self, vec1: Dict, vec2: Dict) -> float:
-        """Calculate cosine similarity between two sparse vectors"""
-        # Get common words
-        common_words = set(vec1.keys()) & set(vec2.keys())
-        
-        if not common_words:
+    def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
+        vec1 = np.array(vec1)
+        vec2 = np.array(vec2)
+        if np.linalg.norm(vec1) == 0 or np.linalg.norm(vec2) == 0:
             return 0.0
-        
-        # Calculate dot product
-        dot_product = sum(vec1[word] * vec2[word] for word in common_words)
-        
-        # Calculate magnitudes
-        mag1 = math.sqrt(sum(val * val for val in vec1.values()))
-        mag2 = math.sqrt(sum(val * val for val in vec2.values()))
-        
-        if mag1 == 0 or mag2 == 0:
-            return 0.0
-        
-        return dot_product / (mag1 * mag2)
+        return float(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
 
     def chunk_document(self, doc: Dict, chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP) -> List[Dict]:
         text = doc.get('text', "")

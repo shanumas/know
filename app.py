@@ -9,7 +9,7 @@ from rag_agent import RAGAgent
 from auto_updater import AutoUpdater
 from utils import format_timestamp, truncate_text
 
-STORIES_LIMIT = 100  # Limit for initial data load
+STORIES_LIMIT = 10  # Limit for initial data load
 AUTO_UPDATE_INTERVAL = 30  # in minutes
 
 
