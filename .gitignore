@@ -10,10 +10,6 @@ __pycache__/
 .streamlit/config.toml
 .streamlit/secrets.toml
 
-# Replit files
-.replit
-replit.md
-
 # Project metadata / lock files
 *.pkl
 *.json
