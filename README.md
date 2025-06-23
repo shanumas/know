@@ -12,7 +12,7 @@ pip install streamlit && pip install uv
 uv sync  # Sync and install remaining dependencies
 ```
 
-5. Run the app:
+5. Run the app: (App available on:  localhost:5000. this will start fetch 100 new stories since the app is started in the browser)
 
 ```bash
 streamlit run app.py --server.port 5000
@@ -39,7 +39,7 @@ Or use the preconfigured VSCode debug config to run directly with debugpy.
 - If a story doesn’t appear in the top results, it’s likely due to:
     - Failed URL extraction
     - YouTube video processing issues (~1–5% failure rate)
-- A sidebar lists all included stories for reference.
+- A sidebar lists all included stories for reference of stories that are included
 - Automatic post scanning is implemented but disabled by default due to memory limits.
 
 
@@ -55,8 +55,8 @@ Or use the preconfigured VSCode debug config to run directly with debugpy.
 
 ## 📚 Technical Notes
 
-- Chunking: 1000 characters per chunk with a 100-character sliding window.
-- URL-extracted text is included inline to ensure consistent chunking strategy.
+- Chunking: 1000 characters per chunk with a 100-character overlap
+- URL-extracted text is included inline with "text from story" to ensure consistent chunking strategy.
 
 
 ## 🔧 Future Improvements
@@ -74,7 +74,8 @@ Or use the preconfigured VSCode debug config to run directly with debugpy.
 - Advanced comment-centric queries using LangChain tool, especially for digging through comments
 
 **Key Takeaway**
-    -It was easy to this assignment because I build 3 chatbots I worked at 2 different companies in the past.
+    -It was easy to this assignment because I build 3 chatbots I worked at 2 different companies in the past
+    -But spent a lot of time on ETL, specially with youtube data extraction
     -They were hard to build and maintain because they were of python backend and react.js frontend and weaviate for vector store
     -Since this one is built with Streamlit, it was relatively easy
 
