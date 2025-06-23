@@ -1,5 +1,7 @@
 ﻿# know
+ 
 🚀 Installation
+
 Copy the .env.sample file and rename it to .env.
 Fill in your OpenAI API key.
 
