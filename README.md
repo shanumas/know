@@ -26,9 +26,9 @@ Run the app:
 
     Python and Streamlit are used for speed and simplicity.
 
-    Start with an in-memory vector store for fast local debugging.
+    Start with an in-memory vector store for fast local debugging (cost-effective, easy to debug ETL pipeline locally before to remote vector database - weaviate in this case).
 
-    Final step: move to Weaviate (cost-effective, easy to debug ETL pipeline remotely).
+    Final step: move to Weaviate 
 
     Embedding model: all-MiniLM-L6-v2 for fast and semantically rich embeddings.
 
