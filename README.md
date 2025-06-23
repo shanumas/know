@@ -1,76 +1,95 @@
 ﻿# know
- 
-🚀 Installation
 
-Copy the .env.sample file and rename it to .env.
-Fill in your OpenAI API key.
+## 🚀 Installation
 
-Use Python >= 3.12.0.
+1. Copy the `.env.sample` file and rename it to `.env`.
+2. Fill in your OpenAI API key.
+3. Use Python >= 3.12.0.
+4. Install dependencies:
 
-Install dependencies:
+```bash
+pip install streamlit && pip install uv
+uv sync  # Sync and install remaining dependencies
+```
 
-    pip install streamlit && pip install uv
-    uv sync  # Sync and install remaining dependencies
+5. Run the app:
 
-Run the app:
-    To use my snapshot of chunks, just run the script.
-    To fetch fresh stories, delete hn_index.json(chunks) first, then run the script.
-    
-    option 1: streamlit run app.py --server.port 5000
-    option 2: Or use the preconfigured VSCode debug config to run directly with debugpy.
+```bash
+streamlit run app.py --server.port 5000
+```
 
-✅ Assumptions
-    This is a quick prototype (no more than 2 days of effort).
+Or use the preconfigured VSCode debug config to run directly with debugpy.
 
-    Search accuracy is prioritized over performance.
+## ✅ Assumptions
 
-    Python and Streamlit are used for speed and simplicity.
+- This is a quick prototype (no more than 2 days of effort).
+- Search accuracy is prioritized over performance.
+- Python and Streamlit are used for speed and simplicity.
+- Start with an in-memory vector store for fast local debugging  (cost-effective, easy to debug ETL pipeline remotely). and introduce weaviate vector database later
+- Embedding model: `all-MiniLM-L6-v2` for fast and semantically rich embeddings.
+- Scraping goal: at least 95% URL success rate; 100% is not required.
+- Content is extracted from YouTube stories to preserve full context.
 
-    Start with an in-memory vector store for fast local debugging (cost-effective, easy to debug ETL pipeline locally before to remote vector database - weaviate in this case).
 
-    Final step: move to Weaviate 
+## 🧠 Solution
 
-    Embedding model: all-MiniLM-L6-v2 for fast and semantically rich embeddings.
+- Semantic search works reliably.
+- Failed to integrate weaviate because of time constrains, but can be done with 1-3 hours of time, if it is needed by the assesment comitee
+- Failed to enable follow-up questions like ChatGPT style, which is not so hard to implement but will take some time.
+- If a story doesn’t appear in the top results, it’s likely due to:
+    - Failed URL extraction
+    - YouTube video processing issues (~1–5% failure rate)
+- A sidebar lists all included stories for reference.
+- Automatic post scanning is implemented but disabled by default due to memory limits.
 
-    Scraping goal: at least 95% URL success rate; 100% is not required.
 
-    Content is extracted from YouTube stories to preserve full context.
+## 📉 Story Handling
 
-🧠 Solution
-    Semantic search works reliably.
+- Loads 100 recent posts initially.
+- Manual loading works, but can be done within fe minutes after starting:
+    - Rapid growth in new posts (e.g., 100+) can cause the in-memory vector store to exceed memory limits and crash the app.
+    - But I tried the auto-updater with 5 minutes interval, which worked fine. You may also try it by changing the following constant in app.py
+![image](https://github.com/user-attachments/assets/7e940561-7faf-4bea-9cf1-bef5c5266762)
 
-    Failed to enable follow-up questions like chat-gpt style, which is not so hard to implement but will take some time
 
-    If a story doesn’t appear in the top results, it’s likely due to:
-        *Failed URL extraction
-        *YouTube video processing issues (~1–5% failure rate)
 
-    A sidebar lists all included stories for reference.
+## 📚 Technical Notes
 
-    Automatic post scanning is implemented but disabled by default due to memory limits.
+- Chunking: 1000 characters per chunk with a 100-character sliding window.
+- URL-extracted text is included inline to ensure consistent chunking strategy.
 
-📉 Story Handling
-    Loads 100 recent posts initially.
 
-    Manual loading works, but:
+## 🔧 Future Improvements
 
-    If many new posts arrive (e.g. >100 after a few hours), the in-memory store might crash.
+- Add unit and integration tests
+- Implement LangChain `ConversationBufferMemory` (or similar) to support follow-up Q\&A like ChatGPT
+- Hybrid search with filters (e.g., by story-point, date) and re-ranking
+- Introduce feedback scheme from users where they can upvote or downvoe certain document
+- Self-improving prompts
+- For production, bigger models with more accuracy can be employed, depending upon customer needs, scope and budget
 
-    High-frequency updates (~1 post every 2 minutes) require a scalable Vector Database.
+**Add LangChain Tools to:**
 
-📚 Technical Notes
-    Chunking: 1000 characters per chunk with a 100-character sliding window.
+- Let users search through comments
+- Advanced comment-centric queries using LangChain tool, especially for digging through comments
 
-    URL-extracted text is included inline to ensure consistent chunking strategy.
+**Key Takeaway**
+    -It was easy to this assignment because I build 3 chatbots I worked at 2 different companies in the past.
+    -They were hard to build and maintain because they were of python backend and react.js frontend and weaviate for vector store
+    -Since this one is built with Streamlit, it was relatively easy
 
-🔧 Future Improvements
-    Add unit and integration tests
 
-    Implement LangChain ConversationBufferMemory (or similar) to support follow-up Q&A like ChatGPT
+![Included stories shown on sidebar](https://github.com/user-attachments/assets/be81e28a-5803-46ec-a280-78daa485f984)
 
-    Hybrid search with filters (e.g., by story-point, date) to improve ranking
 
-Add LangChain Tools to:
-    *Let users search through comments
-    *Advanced comment-centric queries using langchain tool specially for digging throught comments
+![Successful Search](https://github.com/user-attachments/assets/f94f398e-10c9-406b-9ce1-c2442a753dae)
+
+![Search for a topic](https://github.com/user-attachments/assets/db43175b-efdd-46f5-a850-df0a8a032d23)
+
+![Failed search because of failed Website extraction](https://github.com/user-attachments/assets/fab8b275-146f-43f3-a330-b9845940f804)
+
+
+
+
+
 
