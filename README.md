@@ -1,4 +1,10 @@
-﻿# know
+﻿# Hacker News Rag
+
+This is a lean Rag based semantic search solution built on Streamlit, in-memory Vectore-store,
+OpenAI Chatcompletions API for LLM calls, all-MiniLM-L6-v2 for embeddings.
+
+In-memory Vector-store will be replaced with Weaviate whenever I get time to do that.  More details
+as follows.
 
 ## 🚀 Installation
 
