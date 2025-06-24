@@ -31,7 +31,7 @@ Or use the preconfigured VSCode debug config to run directly with debugpy.
 - This is a quick prototype (no more than 2 days of effort).
 - Search accuracy is prioritized over performance.
 - Python and Streamlit are used for speed and simplicity.
-- Start with an in-memory vector store for fast local debugging  (cost-effective, easy to debug ETL pipeline remotely). and introduce weaviate vector database later
+- Start with an in-memory vector store for fast local debugging  (cost-effective, easy to debug ETL pipeline locally). and introduce weaviate vector database later
 - Embedding model: `all-MiniLM-L6-v2` for fast and semantically rich embeddings.
 - Scraping goal: at least 95% URL success rate; 100% is not required.
 - Content is extracted from YouTube stories to preserve full context.
